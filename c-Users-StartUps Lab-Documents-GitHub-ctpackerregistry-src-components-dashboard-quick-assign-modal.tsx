@@ -59,7 +59,7 @@ export default function QuickAssignModal({ isOpen, setIsOpen, supervisors, assig
         if (!open) form.reset({ slotId: undefined, supervisorName: undefined, packerPickerName: '' });
       }}
     >
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="w-[90vw] max-w-[425px] rounded-md">
         <DialogHeader>
           <DialogTitle>Quick Assign Slot</DialogTitle>
           <DialogDescription>Quickly assign an employee to a vacant slot.</DialogDescription>
