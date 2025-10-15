@@ -42,6 +42,7 @@ export default function AssignmentRow({ assignment, supervisors, onUpdateAssignm
   };
 
   const handleCancel = () => {
+    setEditedAssignment(assignment);
     setIsEditing(false);
   };
 

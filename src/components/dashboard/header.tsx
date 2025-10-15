@@ -14,6 +14,7 @@ interface DashboardHeaderProps {
   supervisors: Supervisor[];
   assignments: Assignment[];
   onAddSupervisor: (name: string) => void;
+  onRemoveSupervisor: (id: string) => void;
   onUpdateAssignment: (assignment: Assignment) => void;
 }
 
@@ -23,6 +24,7 @@ export default function DashboardHeader({
   supervisors,
   assignments,
   onAddSupervisor,
+  onRemoveSupervisor,
   onUpdateAssignment
 }: DashboardHeaderProps) {
   const [quickAssignOpen, setQuickAssignOpen] = useState(false);
@@ -62,7 +64,9 @@ export default function DashboardHeader({
       <AddSupervisorModal
         isOpen={addSupervisorOpen}
         setIsOpen={setAddSupervisorOpen}
+        supervisors={supervisors}
         onAddSupervisor={onAddSupervisor}
+        onRemoveSupervisor={onRemoveSupervisor}
       />
     </>
   );
