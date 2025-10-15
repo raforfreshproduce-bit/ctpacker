@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'CTPacker Tracker',
+  title: 'VWSA CPT WAREHOUSE | CTPacker Tracker',
   description: 'Real-Time Packer/Picker Assignment Registry',
 };
 
