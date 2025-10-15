@@ -5,6 +5,7 @@ import type { Assignment, Supervisor } from '@/lib/data';
 import { initialAssignments, initialSupervisors, CTPACKER_SLOTS } from '@/lib/data';
 import KpiCards from '@/components/dashboard/kpi-cards';
 import DashboardHeader from '@/components/dashboard/header';
+import Footer from '@/components/dashboard/footer';
 import AssignmentTable from '@/components/dashboard/assignment-table';
 
 const ASSIGNMENTS_STORAGE_KEY = 'ctpacker-assignments';
@@ -107,7 +108,7 @@ export default function Home() {
   return (
     <main className="flex min-h-screen w-full flex-col">
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-primary mb-2">CTPacker Tracker</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-primary mb-2">CTPacker Tracker</h1>
         <p className="text-muted-foreground mb-8">Real-Time Packer/Picker Assignment Registry</p>
         
         <KpiCards totalSlots={CTPACKER_SLOTS} assignedSlots={assignedSlots} vacantSlots={vacantSlots} />
@@ -122,14 +123,17 @@ export default function Home() {
             onRemoveSupervisor={handleRemoveSupervisor}
             onUpdateAssignment={handleUpdateAssignment}
           />
-          <AssignmentTable
-            assignments={filteredAssignments}
-            supervisors={supervisors}
-            onUpdateAssignment={handleUpdateAssignment}
-            onClearAssignment={handleClearAssignment}
-          />
+          <div className="overflow-x-auto">
+            <AssignmentTable
+              assignments={filteredAssignments}
+              supervisors={supervisors}
+              onUpdateAssignment={handleUpdateAssignment}
+              onClearAssignment={handleClearAssignment}
+            />
+          </div>
         </div>
       </div>
+      <Footer />
     </main>
   );
 }
