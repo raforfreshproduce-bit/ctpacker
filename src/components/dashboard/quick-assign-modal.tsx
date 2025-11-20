@@ -17,7 +17,7 @@ interface QuickAssignModalProps {
   setIsOpen: (isOpen: boolean) => void;
   supervisors: Supervisor[];
   assignments: Assignment[];
-  onUpdateAssignment: (assignment: Assignment) => void;
+  onUpdateAssignment: (assignment: Partial<Assignment> & { id: string }) => Promise<void>;
 }
 
 const formSchema = z.object({
@@ -37,16 +37,21 @@ export default function QuickAssignModal({ isOpen, setIsOpen, supervisors, assig
 
   const vacantSlots = useMemo(() => assignments.filter(a => !a.packerPickerName), [assignments]);
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    onUpdateAssignment({
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      await onUpdateAssignment({
       id: values.slotId,
       supervisorName: values.supervisorName,
       packerPickerName: values.packerPickerName,
     });
-    toast({
-      title: "Slot Assigned",
-      description: `${values.slotId} has been assigned to ${values.packerPickerName}.`,
-    });
+      toast({
+        title: "Slot Assigned",
+        description: `${values.slotId} has been assigned to ${values.packerPickerName}.`,
+      });
+    } catch (error: any) {
+      console.error("Failed to update assignment:", error);
+      toast({ variant: "destructive", title: "Error", description: "Failed to update assignment." });
+    }
     form.reset();
     setIsOpen(false);
   }
@@ -54,7 +59,12 @@ export default function QuickAssignModal({ isOpen, setIsOpen, supervisors, assig
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if(!open) form.reset(); }}>
       <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
+       <DialogHeader>
+
+
+
+
+
           <DialogTitle>Quick Assign Slot</DialogTitle>
           <DialogDescription>Quickly assign an employee to a vacant slot.</DialogDescription>
         </DialogHeader>
