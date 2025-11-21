@@ -12,33 +12,56 @@ const ASSIGNMENTS_STORAGE_KEY = 'ctpacker-assignments';
 const SUPERVISORS_STORAGE_KEY = 'ctpacker-supervisors';
 
 export default function Home() {
-  const [assignments, setAssignments] = useState<Assignment[]>(() => {
-    // This function runs only on the initial render.
-    // We can't use localStorage directly here because of server-side rendering.
-    // We'll load from localStorage in a useEffect hook.
-    return initialAssignments;
-  });
-  const [supervisors, setSupervisors] = useState<Supervisor[]>(initialSupervisors);
+  const [localAssignments, setAssignments] = useState<Assignment[]>(initialAssignments);
+  const [localSupervisors, setSupervisors] = useState<Supervisor[]>(initialSupervisors);
   const [searchTerm, setSearchTerm] = useState('');
+  const [hydrated, setHydrated] = useState(false);
 
-  // Load state from localStorage on initial client-side render
+  // Ensure hydration consistency
   useEffect(() => {
-    const storedAssignments = localStorage.getItem(ASSIGNMENTS_STORAGE_KEY);
-    if (storedAssignments) {
-      setAssignments(JSON.parse(storedAssignments));
-    }
-    const storedSupervisors = localStorage.getItem(SUPERVISORS_STORAGE_KEY);
-    if (storedSupervisors) {
-      setSupervisors(JSON.parse(storedSupervisors));
-    }
+    console.log('Hydration started'); // Debugging log
+    setHydrated(true);
+    console.log('Hydration complete'); // Debugging log
   }, []);
 
-  const assignedSlots = useMemo(() => assignments.filter(a => a.packerPickerName).length, [assignments]);
+  // Fetch data client-side on initial render
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        console.log('Fetching data'); // Debugging log
+        const assignments = await fetch('https://lghwfatkiwixgzsmdzuk.supabase.co/rest/v1/assignments', {
+          headers: {
+            apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          },
+        }).then(res => res.json());
+
+        const supervisors = await fetch('https://lghwfatkiwixgzsmdzuk.supabase.co/rest/v1/supervisors', {
+          headers: {
+            apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          },
+        }).then(res => res.json());
+
+        console.log('Data fetched:', { assignments, supervisors }); // Debugging log
+        setAssignments(assignments);
+        setSupervisors(supervisors);
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const assignedSlots = useMemo(() => {
+    console.log('Calculating assigned slots'); // Debugging log
+    return localAssignments.filter(a => a.packerPickerName).length;
+  }, [localAssignments]);
+
   const vacantSlots = CTPACKER_SLOTS - assignedSlots;
 
   const handleAddSupervisor = (name: string) => {
     const newSupervisor: Supervisor = {
-      id: (supervisors.length + 1).toString(),
+      id: (localSupervisors.length + 1).toString(),
       name: name.toUpperCase(),
     };
     setSupervisors(prev => {
@@ -49,11 +72,11 @@ export default function Home() {
   };
 
   const handleRemoveSupervisor = (supervisorId: string) => {
-    const supervisorToRemove = supervisors.find(s => s.id === supervisorId);
+    const supervisorToRemove = localSupervisors.find(s => s.id === supervisorId);
     if (!supervisorToRemove) return;
 
     // Remove supervisor from the list
-    const newSupervisors = supervisors.filter(s => s.id !== supervisorId);
+    const newSupervisors = localSupervisors.filter(s => s.id !== supervisorId);
     setSupervisors(newSupervisors);
     localStorage.setItem(SUPERVISORS_STORAGE_KEY, JSON.stringify(newSupervisors));
 
@@ -84,12 +107,13 @@ export default function Home() {
       return newAssignments;
     });
   };
-  
+
   const filteredAssignments = useMemo(() => {
-    if (!searchTerm) return assignments;
+    console.log('Filtering assignments'); // Debugging log
+    if (!searchTerm) return localAssignments;
     const lowercasedFilter = searchTerm.toLowerCase();
-    
-    return assignments.filter(assignment => {
+
+    return localAssignments.filter(assignment => {
       const status = !assignment.packerPickerName
         ? 'vacant'
         : assignment.packerPickerName.toLowerCase().includes('recount')
@@ -103,22 +127,27 @@ export default function Home() {
         status.includes(lowercasedFilter)
       );
     });
-  }, [assignments, searchTerm]);
+  }, [localAssignments, searchTerm]);
+
+  if (!hydrated) {
+    console.log('Waiting for hydration'); // Debugging log
+    return null; // Avoid rendering until hydration is complete
+  }
 
   return (
     <main className="flex min-h-screen w-full flex-col">
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-2xl md:text-3xl font-bold text-primary mb-2">CTPacker Tracker</h1>
         <p className="text-muted-foreground mb-8">Real-Time Packer/Picker Assignment Registry</p>
-        
+
         <KpiCards totalSlots={CTPACKER_SLOTS} assignedSlots={assignedSlots} vacantSlots={vacantSlots} />
 
         <div className="mt-8">
           <DashboardHeader
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
-            supervisors={supervisors}
-            assignments={assignments}
+            supervisors={localSupervisors}
+            assignments={localAssignments}
             onAddSupervisor={handleAddSupervisor}
             onRemoveSupervisor={handleRemoveSupervisor}
             onUpdateAssignment={handleUpdateAssignment}
@@ -126,7 +155,7 @@ export default function Home() {
           <div className="overflow-x-auto">
             <AssignmentTable
               assignments={filteredAssignments}
-              supervisors={supervisors}
+              supervisors={localSupervisors}
               onUpdateAssignment={handleUpdateAssignment}
               onClearAssignment={handleClearAssignment}
             />
