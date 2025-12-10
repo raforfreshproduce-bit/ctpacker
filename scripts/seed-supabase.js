@@ -21,19 +21,24 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 async function tableExists(table) {
   try {
-    // Use rpc to call a PostgreSQL function that checks for table existence.
-    // This is more direct and robust than trying to select data.
+    // Use rpc to call a PostgreSQL function that checks for table existence, which is more direct and robust.
     const { data, error } = await supabase.rpc('table_exists', { table_name: table });
 
     if (error) {
       // If the rpc call itself fails, something is wrong (e.g., permissions, network).
       console.error(`Error checking for table '${table}':`, error.message);
+      // This could happen if the `table_exists` function hasn't been created in the DB yet.
+      if (error.code === '42883') { // "function does not exist"
+        console.error(`Hint: The RPC function 'table_exists' may not be defined. Please run the required SQL command in your Supabase editor.`);
+      }
       throw error;
     }
 
     return data;
   } catch (e) {
-    throw new Error(`Failed to execute table existence check for '${table}'. Ensure the 'table_exists' RPC function is defined in your database.`);
+    // Catching and re-throwing allows us to add context without losing the original error stack.
+    console.error(`An unexpected error occurred while checking for table '${table}'.`);
+    throw e;
   }
 }
 
@@ -75,17 +80,18 @@ async function seed() {
   console.log('Seed complete');
 }
 
-// Before running the seed, you need to create the `table_exists` function in your Supabase SQL editor.
-// Go to the SQL Editor in your Supabase dashboard and run the following command once:
-/*
-  CREATE OR REPLACE FUNCTION table_exists(table_name text)
-  RETURNS boolean AS $$
-  BEGIN
-    RETURN EXISTS (
-      SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND information_schema.tables.table_name = $1
-    );
-  END;
-  $$ LANGUAGE plpgsql;
-*/
+async function main() {
+  // Important: Before running this script, you must create the `table_exists` function in your Supabase database.
+  // Go to the SQL Editor in your Supabase dashboard and run the following SQL command once:
+  /*
+    CREATE OR REPLACE FUNCTION table_exists(table_name text)
+    RETURNS boolean AS $$
+    BEGIN
+      RETURN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND information_schema.tables.table_name = $1);
+    END;
+    $$ LANGUAGE plpgsql;
+  */
+  await seed();
+}
 
-seed().catch(e => { console.error(e); process.exit(1); });
+main().catch(e => { console.error(e); process.exit(1); });
