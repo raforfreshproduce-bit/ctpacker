@@ -10,14 +10,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import type { Supervisor } from '@/lib/data';
+import type { Supervisor } from '@/lib/types';
 
 interface AddSupervisorModalProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   supervisors: Supervisor[];
-  onAddSupervisor: (name: string) => void;
-  onRemoveSupervisor: (id: string) => void;
+  onAddSupervisor: (name: string) => Promise<void>;
+  onRemoveSupervisor: (id: string) => Promise<void>;
 }
 
 const formSchema = z.object({
@@ -31,8 +31,8 @@ export default function AddSupervisorModal({ isOpen, setIsOpen, supervisors, onA
     defaultValues: { name: '' },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    onAddSupervisor(values.name);
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    await onAddSupervisor(values.name);
     toast({
       title: "Success",
       description: `Supervisor "${values.name.toUpperCase()}" has been added.`,
@@ -41,8 +41,8 @@ export default function AddSupervisorModal({ isOpen, setIsOpen, supervisors, onA
     setIsOpen(false);
   }
 
-  function handleRemove(supervisor: Supervisor) {
-    onRemoveSupervisor(supervisor.id);
+  async function handleRemove(supervisor: Supervisor) {
+    await onRemoveSupervisor(supervisor.id);
     toast({
       title: "Supervisor Removed",
       description: `"${supervisor.name}" has been removed.`,

@@ -7,15 +7,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Pencil, Save, X, Trash2 } from 'lucide-react';
-import type { Assignment, Supervisor } from '@/lib/data';
+import type { Assignment, Supervisor } from '@/lib/types';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
 
 interface AssignmentRowProps {
   assignment: Assignment;
   supervisors: Supervisor[];
-  onUpdateAssignment: (assignment: Assignment) => void;
-  onClearAssignment: (assignmentId: string) => void;
+  onUpdateAssignment: (assignment: Partial<Assignment> & { id: string }) => Promise<void>;
+  onClearAssignment: (assignmentId: string) => Promise<void>;
 }
 
 const getStatus = (packerPickerName: string | null) => {
@@ -46,7 +46,7 @@ export default function AssignmentRow({ assignment, supervisors, onUpdateAssignm
     setIsEditing(false);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if(!editedAssignment.packerPickerName && isAssigned) {
         toast({
             variant: "destructive",
@@ -63,7 +63,7 @@ export default function AssignmentRow({ assignment, supervisors, onUpdateAssignm
         });
         return;
     }
-    onUpdateAssignment(editedAssignment);
+    await onUpdateAssignment(editedAssignment);
     setIsEditing(false);
     toast({
         title: "Assignment Updated",
@@ -71,8 +71,8 @@ export default function AssignmentRow({ assignment, supervisors, onUpdateAssignm
     })
   };
 
-  const handleClear = () => {
-    onClearAssignment(assignment.id);
+  const handleClear = async () => {
+    await onClearAssignment(assignment.id);
     setIsEditing(false);
     toast({
         title: "Assignment Cleared",

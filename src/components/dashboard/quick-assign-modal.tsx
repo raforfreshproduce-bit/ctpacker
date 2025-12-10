@@ -9,15 +9,15 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import type { Assignment, Supervisor } from '@/lib/data';
-import { useMemo } from 'react';
+import type { Assignment, Supervisor } from '@/lib/types';
+import { useMemo, useEffect } from 'react';
 
 interface QuickAssignModalProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   supervisors: Supervisor[];
   assignments: Assignment[];
-  onUpdateAssignment: (assignment: Assignment) => void;
+  onUpdateAssignment: (assignment: Partial<Assignment> & { id: string }) => Promise<void>;
 }
 
 const formSchema = z.object({
@@ -37,8 +37,14 @@ export default function QuickAssignModal({ isOpen, setIsOpen, supervisors, assig
 
   const vacantSlots = useMemo(() => assignments.filter(a => !a.packerPickerName), [assignments]);
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    onUpdateAssignment({
+  useEffect(() => {
+    if (!isOpen) {
+      form.reset({ slotId: undefined, supervisorName: undefined, packerPickerName: '' });
+    }
+  }, [isOpen, form]);
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    await onUpdateAssignment({
       id: values.slotId,
       supervisorName: values.supervisorName,
       packerPickerName: values.packerPickerName,
@@ -52,7 +58,7 @@ export default function QuickAssignModal({ isOpen, setIsOpen, supervisors, assig
   }
   
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if(!open) form.reset(); }}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Quick Assign Slot</DialogTitle>

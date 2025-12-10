@@ -1,12 +1,12 @@
 import { Table, TableBody, TableHeader, TableHead, TableRow } from '@/components/ui/table';
-import type { Assignment, Supervisor } from '@/lib/data';
+import type { Assignment, Supervisor } from '@/lib/types';
 import AssignmentRow from './assignment-row';
 
 interface AssignmentTableProps {
   assignments: Assignment[];
   supervisors: Supervisor[];
-  onUpdateAssignment: (assignment: Assignment) => void;
-  onClearAssignment: (assignmentId: string) => void;
+  onUpdateAssignment: (assignment: Partial<Assignment> & { id: string }) => Promise<void>;
+  onClearAssignment: (assignmentId: string) => Promise<void>;
 }
 
 export default function AssignmentTable({ assignments, supervisors, onUpdateAssignment, onClearAssignment }: AssignmentTableProps) {

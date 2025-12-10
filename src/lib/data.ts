@@ -25,7 +25,6 @@ initialAssignments[1].packerPickerName = 'Peter Pan';
 initialAssignments[3].supervisorName = 'RUDI';
 initialAssignments[3].packerPickerName = 'Alice Wonderland RECOUNT';
 
-
 export const initialSupervisors: Supervisor[] = [
   { id: '1', name: 'RUDI' },
   { id: '2', name: 'JANE' },

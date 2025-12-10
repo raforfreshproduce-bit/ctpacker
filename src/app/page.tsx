@@ -1,135 +1,125 @@
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
-import type { Assignment, Supervisor } from '@/lib/data';
-import { initialAssignments, initialSupervisors, CTPACKER_SLOTS } from '@/lib/data';
-import KpiCards from '@/components/dashboard/kpi-cards';
-import DashboardHeader from '@/components/dashboard/header';
-import AssignmentTable from '@/components/dashboard/assignment-table';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase-client';
+import Link from 'next/link';
 
-const ASSIGNMENTS_STORAGE_KEY = 'ctpacker-assignments';
-const SUPERVISORS_STORAGE_KEY = 'ctpacker-supervisors';
+export default function Page() {
+  const router = useRouter();
+  const [isSignup, setIsSignup] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [message, setMessage] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-export default function Home() {
-  const [assignments, setAssignments] = useState<Assignment[]>(() => {
-    // This function runs only on the initial render.
-    // We can't use localStorage directly here because of server-side rendering.
-    // We'll load from localStorage in a useEffect hook.
-    return initialAssignments;
-  });
-  const [supervisors, setSupervisors] = useState<Supervisor[]>(initialSupervisors);
-  const [searchTerm, setSearchTerm] = useState('');
-
-  // Load state from localStorage on initial client-side render
   useEffect(() => {
-    const storedAssignments = localStorage.getItem(ASSIGNMENTS_STORAGE_KEY);
-    if (storedAssignments) {
-      setAssignments(JSON.parse(storedAssignments));
-    }
-    const storedSupervisors = localStorage.getItem(SUPERVISORS_STORAGE_KEY);
-    if (storedSupervisors) {
-      setSupervisors(JSON.parse(storedSupervisors));
-    }
-  }, []);
+    let mounted = true;
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!mounted) return;
+        if (data?.session) {
+          setIsAuthenticated(true);
+          router.replace('/dashboard');
+        }
+      } catch (e) {
+        console.error('[page] session check failed', e);
+      }
+    })();
 
-  const assignedSlots = useMemo(() => assignments.filter(a => a.packerPickerName).length, [assignments]);
-  const vacantSlots = CTPACKER_SLOTS - assignedSlots;
-
-  const handleAddSupervisor = (name: string) => {
-    const newSupervisor: Supervisor = {
-      id: (supervisors.length + 1).toString(),
-      name: name.toUpperCase(),
+    return () => {
+      mounted = false;
     };
-    setSupervisors(prev => {
-      const newSupervisors = [...prev, newSupervisor];
-      localStorage.setItem(SUPERVISORS_STORAGE_KEY, JSON.stringify(newSupervisors));
-      return newSupervisors;
-    });
+  }, [router]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMessage('');
+
+    try {
+      const endpoint = isSignup ? '/api/signup' : '/api/signin';
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Authentication failed');
+      }
+
+      setMessage(isSignup ? 'Signup successful! Please check your email.' : 'Sign-in successful!');
+      setEmail('');
+      setPassword('');
+
+      // Redirect to dashboard after successful sign-in
+      if (!isSignup) {
+        router.push('/dashboard');
+      }
+    } catch (error: any) {
+      setMessage(error.message);
+    }
   };
 
-  const handleRemoveSupervisor = (supervisorId: string) => {
-    const supervisorToRemove = supervisors.find(s => s.id === supervisorId);
-    if (!supervisorToRemove) return;
-
-    // Remove supervisor from the list
-    const newSupervisors = supervisors.filter(s => s.id !== supervisorId);
-    setSupervisors(newSupervisors);
-    localStorage.setItem(SUPERVISORS_STORAGE_KEY, JSON.stringify(newSupervisors));
-
-    // Un-assign the removed supervisor from any slots
-    setAssignments(prev => {
-      const newAssignments = prev.map(a =>
-        a.supervisorName === supervisorToRemove.name ? { ...a, supervisorName: null } : a
-      );
-      localStorage.setItem(ASSIGNMENTS_STORAGE_KEY, JSON.stringify(newAssignments));
-      return newAssignments;
-    });
-  };
-
-  const handleUpdateAssignment = (updatedAssignment: Assignment) => {
-    setAssignments(prev => {
-      const newAssignments = prev.map(a => (a.id === updatedAssignment.id ? updatedAssignment : a));
-      localStorage.setItem(ASSIGNMENTS_STORAGE_KEY, JSON.stringify(newAssignments));
-      return newAssignments;
-    });
-  };
-
-  const handleClearAssignment = (assignmentId: string) => {
-    setAssignments(prev => {
-      const newAssignments = prev.map(a =>
-        a.id === assignmentId ? { ...a, supervisorName: null, packerPickerName: null } : a
-      );
-      localStorage.setItem(ASSIGNMENTS_STORAGE_KEY, JSON.stringify(newAssignments));
-      return newAssignments;
-    });
-  };
-  
-  const filteredAssignments = useMemo(() => {
-    if (!searchTerm) return assignments;
-    const lowercasedFilter = searchTerm.toLowerCase();
-    
-    return assignments.filter(assignment => {
-      const status = !assignment.packerPickerName
-        ? 'vacant'
-        : assignment.packerPickerName.toLowerCase().includes('recount')
-        ? 'psi recount'
-        : 'assigned';
-
-      return (
-        assignment.id.toLowerCase().includes(lowercasedFilter) ||
-        (assignment.supervisorName && assignment.supervisorName.toLowerCase().includes(lowercasedFilter)) ||
-        (assignment.packerPickerName && assignment.packerPickerName.toLowerCase().includes(lowercasedFilter)) ||
-        status.includes(lowercasedFilter)
-      );
-    });
-  }, [assignments, searchTerm]);
+  if (isAuthenticated) {
+    return null; // Prevent rendering the form if the user is authenticated
+  }
 
   return (
-    <main className="flex min-h-screen w-full flex-col">
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-primary mb-2">CTPacker Tracker</h1>
-        <p className="text-muted-foreground mb-8">Real-Time Packer/Picker Assignment Registry</p>
-        
-        <KpiCards totalSlots={CTPACKER_SLOTS} assignedSlots={assignedSlots} vacantSlots={vacantSlots} />
-
-        <div className="mt-8">
-          <DashboardHeader
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            supervisors={supervisors}
-            assignments={assignments}
-            onAddSupervisor={handleAddSupervisor}
-            onRemoveSupervisor={handleRemoveSupervisor}
-            onUpdateAssignment={handleUpdateAssignment}
-          />
-          <AssignmentTable
-            assignments={filteredAssignments}
-            supervisors={supervisors}
-            onUpdateAssignment={handleUpdateAssignment}
-            onClearAssignment={handleClearAssignment}
+    <main className="flex min-h-screen w-full flex-col items-center justify-center">
+      <h1 className="text-3xl font-bold mb-4">{isSignup ? 'Sign Up' : 'Sign In'}</h1>
+      <form onSubmit={handleSubmit} className="space-y-4 w-full max-w-md">
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           />
         </div>
-      </div>
+
+        <div>
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            Password
+          </label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          />
+        </div>
+
+        <button
+          type="submit"
+          className="w-full inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+        >
+          {isSignup ? 'Sign Up' : 'Sign In'}
+        </button>
+
+        {message && <p className="mt-2 text-sm text-red-600">{message}</p>}
+
+        <p className="text-sm text-center">
+          {isSignup ? 'Already have an account?' : "Don't have an account?"}{' '}
+          <button
+            type="button"
+            onClick={() => setIsSignup(!isSignup)}
+            className="text-indigo-600 hover:underline"
+          >
+            {isSignup ? 'Sign In' : 'Sign Up'}
+          </button>
+        </p>
+      </form>
     </main>
   );
 }
