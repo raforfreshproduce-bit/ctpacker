@@ -89,7 +89,7 @@ export default function AssignmentRow({ assignment, supervisors, onUpdateAssignm
             value={editedAssignment.supervisorName || ''}
             onValueChange={(value) => setEditedAssignment({ ...editedAssignment, supervisorName: value })}
           >
-            <SelectTrigger className="w-full min-w-[150px]">
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Select Supervisor" />
             </SelectTrigger>
             <SelectContent>

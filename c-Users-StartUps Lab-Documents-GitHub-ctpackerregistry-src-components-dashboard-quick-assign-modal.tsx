@@ -17,7 +17,7 @@ interface QuickAssignModalProps {
   setIsOpen: (isOpen: boolean) => void;
   supervisors: Supervisor[];
   assignments: Assignment[];
-  onUpdateAssignment: (assignment: Assignment) => void;
+  onUpdateAssignment: (assignment: Partial<Assignment> & { id: string }) => Promise<void>;
 }
 
 const formSchema = z.object({
@@ -37,8 +37,8 @@ export default function QuickAssignModal({ isOpen, setIsOpen, supervisors, assig
 
   const vacantSlots = useMemo(() => assignments.filter(a => !a.packerPickerName), [assignments]);
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    onUpdateAssignment({
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    await onUpdateAssignment({
       id: values.slotId,
       supervisorName: values.supervisorName,
       packerPickerName: values.packerPickerName,
@@ -59,7 +59,7 @@ export default function QuickAssignModal({ isOpen, setIsOpen, supervisors, assig
         if (!open) form.reset({ slotId: undefined, supervisorName: undefined, packerPickerName: '' });
       }}
     >
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="w-[90vw] max-w-[425px] rounded-md">
         <DialogHeader>
           <DialogTitle>Quick Assign Slot</DialogTitle>
           <DialogDescription>Quickly assign an employee to a vacant slot.</DialogDescription>

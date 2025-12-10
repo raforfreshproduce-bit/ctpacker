@@ -1,3 +1,5 @@
+import { fetchData, insertData, deleteData } from './client';
+
 export interface Assignment {
   id: string; // e.g. 'CTPACKER 1'
   supervisorName: string | null;
@@ -17,17 +19,38 @@ export const initialAssignments: Assignment[] = Array.from({ length: CTPACKER_SL
   packerPickerName: null,
 }));
 
-// Some initial data for demonstration purposes
-initialAssignments[0].supervisorName = 'RUDI';
-initialAssignments[0].packerPickerName = 'John Doe';
-initialAssignments[1].supervisorName = 'JANE';
-initialAssignments[1].packerPickerName = 'Peter Pan';
-initialAssignments[3].supervisorName = 'RUDI';
-initialAssignments[3].packerPickerName = 'Alice Wonderland RECOUNT';
+export const initialSupervisors: Supervisor[] = [];
 
+<<<<<<< HEAD
 export const initialSupervisors: Supervisor[] = [
   { id: '1', name: 'RUDI' },
   { id: '2', name: 'JANE' },
   { id: '3', name: 'MIKE' },
   { id: '4', name: 'SOPHIA' },
 ];
+=======
+// Client-side data handling
+export async function getClientAssignments() {
+  return await fetchData('assignments');
+}
+
+export async function addClientAssignment(assignment: Assignment) {
+  return await insertData('assignments', assignment);
+}
+
+export async function removeClientAssignment(id: string) {
+  return await deleteData('assignments', { id });
+}
+
+export async function getClientSupervisors() {
+  return await fetchData('supervisors');
+}
+
+export async function addClientSupervisor(supervisor: Supervisor) {
+  return await insertData('supervisors', supervisor);
+}
+
+export async function removeClientSupervisor(id: string) {
+  return await deleteData('supervisors', { id });
+}
+>>>>>>> main
