@@ -19,16 +19,13 @@ export const initialAssignments: Assignment[] = Array.from({ length: CTPACKER_SL
   packerPickerName: null,
 }));
 
-export const initialSupervisors: Supervisor[] = [];
-
-<<<<<<< HEAD
 export const initialSupervisors: Supervisor[] = [
   { id: '1', name: 'RUDI' },
   { id: '2', name: 'JANE' },
   { id: '3', name: 'MIKE' },
   { id: '4', name: 'SOPHIA' },
 ];
-=======
+
 // Client-side data handling
 export async function getClientAssignments() {
   return await fetchData('assignments');
@@ -53,4 +50,3 @@ export async function addClientSupervisor(supervisor: Supervisor) {
 export async function removeClientSupervisor(id: string) {
   return await deleteData('supervisors', { id });
 }
->>>>>>> main

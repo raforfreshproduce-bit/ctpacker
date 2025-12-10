@@ -26,7 +26,13 @@ const formSchema = z.object({
   packerPickerName: z.string().min(2, { message: "Packer/Picker name must be at least 2 characters." }),
 });
 
-export default function QuickAssignModal({ isOpen, setIsOpen, supervisors, assignments, onUpdateAssignment }: QuickAssignModalProps) {
+export default function QuickAssignModal({
+  isOpen,
+  setIsOpen,
+  supervisors,
+  assignments,
+  onUpdateAssignment,
+}: QuickAssignModalProps): JSX.Element {
   const { toast } = useToast();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -37,7 +43,6 @@ export default function QuickAssignModal({ isOpen, setIsOpen, supervisors, assig
 
   const vacantSlots = useMemo(() => assignments.filter(a => !a.packerPickerName), [assignments]);
 
-<<<<<<< HEAD
   useEffect(() => {
     if (!isOpen) {
       form.reset({ slotId: undefined, supervisorName: undefined, packerPickerName: '' });
@@ -45,16 +50,12 @@ export default function QuickAssignModal({ isOpen, setIsOpen, supervisors, assig
   }, [isOpen, form]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    await onUpdateAssignment({
-=======
-  async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       await onUpdateAssignment({
->>>>>>> main
-      id: values.slotId,
-      supervisorName: values.supervisorName,
-      packerPickerName: values.packerPickerName,
-    });
+        id: values.slotId,
+        supervisorName: values.supervisorName,
+        packerPickerName: values.packerPickerName,
+      });
       toast({
         title: "Slot Assigned",
         description: `${values.slotId} has been assigned to ${values.packerPickerName}.`,
